@@ -6,12 +6,13 @@
 #include "GameFramework/Character.h"
 
 #include "Runtime/Engine/Classes/Camera/CameraComponent.h"
-#include "Runtime/Engine/Classes/GameFramework/PawnMovementComponent.h"
+#include "Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h"
 #include "Runtime/Engine/Classes/Components/SceneComponent.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
+#include "Engine/Engine.h"
 
 #include "../CheckpointInterface.h"
 
@@ -44,8 +45,34 @@ protected:
     UFUNCTION ()
         void MoveVertical (float value);
 
+    UFUNCTION()
+        void JumpPressed();
+
+    void FORCEINLINE CommomJump();
+    void FORCEINLINE WallJump();
+    
+    void FORCEINLINE ApplyGravity(float DeltaTime);
+
+    UFUNCTION()
+        void LeftBeginOverlap(class UPrimitiveComponent* OverlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+    UFUNCTION()
+        void LeftEndOverlap(class UPrimitiveComponent* OverlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+    UFUNCTION()
+        void RightBeginOverlap(class UPrimitiveComponent* OverlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+    UFUNCTION()
+        void RightEndOverlap(class UPrimitiveComponent* OverlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+    UFUNCTION()
+        void UpBeginOverlap(class UPrimitiveComponent* OverlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+    UFUNCTION()
+        void UpEndOverlap(class UPrimitiveComponent* OverlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+    UFUNCTION()
+        void DownBeginOverlap(class UPrimitiveComponent* OverlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+    UFUNCTION()
+        void DownEndOverlap(class UPrimitiveComponent* OverlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
 private:
-    void ContructorFinderDefaults();
+    void ConstructorFinderDefaults();
+    bool FORCEINLINE IsSelf(class AActor* OtherActor) { return OtherActor == this;  }
 
 public:	
 	// Called every frame
@@ -59,6 +86,18 @@ public:
     virtual void CreateCheckpoint_Implementation() override;
 
 private:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Settings", meta = (AllowPrivateAccess = "true"))
+        EGravityType StartGravity = EGravityType::VE_DOWN;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Settings", meta = (AllowPrivateAccess = "true"))
+        float MovementSpeed = 620.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Settings", meta = (AllowPrivateAccess = "true"))
+        float JumpForce = 21000.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Settings", meta = (AllowPrivateAccess = "true"))
+        float GravityForce = 980.0f;
+    UPROPERTY()
+        FVector GravityVector;
+    UPROPERTY()
+        float CurrentDeltaTime;
     UPROPERTY()
         bool bLanded;
     UPROPERTY()
@@ -71,8 +110,8 @@ private:
         bool bOnDownWall;
     UPROPERTY()
         EGravityType CurrentGravity;
-    UPROPERTY()
-        UPawnMovementComponent* MovementComponent;
+    UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Movement Component", meta = (AllowPrivateAccess = "true"))
+        UCharacterMovementComponent* MovementComponent;
 
     UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Cube", meta = (AllowPrivateAccess = "true"))
         UStaticMeshComponent* CubeMesh;
@@ -86,6 +125,13 @@ private:
         UBoxComponent* LeftCollision;
     UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Collision Detectors", meta = (AllowPrivateAccess = "true"))
         UBoxComponent* RightCollision;
-    UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Object", meta = (AllowPrivateAccess = "true"))
-        USceneComponent* DefaultSceneRoot;
+
+    UPROPERTY()
+        uint16 UpCollisionCount = 0;
+    UPROPERTY()
+        uint16 DownCollisionCount = 0;
+    UPROPERTY()
+        uint16 RightCollisionCount = 0;
+    UPROPERTY()
+        uint16 LeftCollisionCount = 0;
 };
