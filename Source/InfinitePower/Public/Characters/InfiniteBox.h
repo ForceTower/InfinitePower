@@ -4,10 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+
 #include "Runtime/Engine/Classes/Camera/CameraComponent.h"
+#include "Runtime/Engine/Classes/GameFramework/PawnMovementComponent.h"
+#include "Runtime/Engine/Classes/Components/SceneComponent.h"
+#include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
+
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
+
 #include "../CheckpointInterface.h"
+
 #include "InfiniteBox.generated.h"
 
 UENUM(BlueprintType)
@@ -64,6 +71,8 @@ private:
         bool bOnDownWall;
     UPROPERTY()
         EGravityType CurrentGravity;
+    UPROPERTY()
+        UPawnMovementComponent* MovementComponent;
 
     UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Cube", meta = (AllowPrivateAccess = "true"))
         UStaticMeshComponent* CubeMesh;
@@ -77,4 +86,6 @@ private:
         UBoxComponent* LeftCollision;
     UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Collision Detectors", meta = (AllowPrivateAccess = "true"))
         UBoxComponent* RightCollision;
+    UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Object", meta = (AllowPrivateAccess = "true"))
+        USceneComponent* DefaultSceneRoot;
 };
