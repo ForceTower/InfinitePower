@@ -16,7 +16,7 @@
 	"Plugins": [
 		{
 			"Name": "CustomGravityPlugin",
-			"Enabled": true
+			"Enabled": false
 		}
 	]
 }
