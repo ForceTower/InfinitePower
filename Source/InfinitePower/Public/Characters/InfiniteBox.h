@@ -166,19 +166,19 @@ private:
         FRotator EndCameraSwitchRotator;
 
     //Camera Vectors
-    FVector DownLocation = FVector(-700, 0, 150);
+    FVector DownLocation = FVector(-900, 0, 150);
     FRotator DownRotator = FRotator(-20, 0, 0);
 
-    FVector UpLocation = FVector(-700, 0, -150);
+    FVector UpLocation = FVector(-900, 0, -150);
     FRotator UpRotator = FRotator(20, 0, 0);
 
-    FVector LeftLocation = FVector(-700, 150, 0);
+    FVector LeftLocation = FVector(-900, 150, 0);
     FRotator LeftRotator = FRotator(0, -20, 0);
 
-    FVector RightLocation = FVector(-700, -150, 0);
+    FVector RightLocation = FVector(-900, -150, 0);
     FRotator RightRotator = FRotator(0, 20, 0);
 
-    FColor StartSwitchColor;
-    FColor EndSwitchColor;
-    FColor CurrentColor;
+    FLinearColor StartSwitchColor;
+    FLinearColor EndSwitchColor;
+    FLinearColor CurrentColor;
 };

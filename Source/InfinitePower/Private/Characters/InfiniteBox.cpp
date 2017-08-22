@@ -26,7 +26,7 @@ AInfiniteBox::AInfiniteBox()
     
     Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
     Camera->SetupAttachment(CubeMesh);
-    Camera->SetRelativeLocation(FVector(-700, 0, 150));
+    Camera->SetRelativeLocation(FVector(-900, 0, 150));
     Camera->SetRelativeRotation(FRotator(-20, 0, 0));
 
     UpCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("Up Collision"));
@@ -83,11 +83,12 @@ void AInfiniteBox::BeginPlay()
 	Super::BeginPlay();
     CurrentGravity = StartGravity;
     CreateCheckpoint_Implementation();
+    DynamicMaterialInstance = CubeMesh->CreateDynamicMaterialInstance(0);
 }
 
 void AInfiniteBox::OnConstruction(const FTransform& Transform)
 {
-    DynamicMaterialInstance = CubeMesh->CreateDynamicMaterialInstance(0);
+    
 }
 
 // Called every frame
@@ -220,7 +221,7 @@ void AInfiniteBox::WallJump()
 
 void AInfiniteBox::ChangeGravity(EGravityType NewGravity)
 {
-    if (NewGravity == CurrentGravity)
+    if (NewGravity == CurrentGravity || NewGravity == EGravityType::VE_NONE)
         return;
 
     InterpCameraGravitySwitchFloatFunction.BindUFunction(this, FName("CameraGravitySwitchUpdate"));
@@ -234,18 +235,22 @@ void AInfiniteBox::ChangeGravity(EGravityType NewGravity)
         case EGravityType::VE_DOWN:
             EndCameraSwitchRotator = DownRotator;
             EndCameraSwitchLocation = DownLocation;
+            EndSwitchColor = FLinearColor(0, 0.176688, 1.0);
             break;
         case EGravityType::VE_UP:
             EndCameraSwitchRotator = UpRotator;
             EndCameraSwitchLocation = UpLocation;
+            EndSwitchColor = FLinearColor::Green;
             break;
         case EGravityType::VE_LEFT:
             EndCameraSwitchRotator = LeftRotator;
             EndCameraSwitchLocation = LeftLocation;
+            EndSwitchColor = FLinearColor::Yellow;
             break;
         case EGravityType::VE_RIGHT:
             EndCameraSwitchLocation = RightLocation;
             EndCameraSwitchRotator = RightRotator;
+            EndSwitchColor = FLinearColor::Red;
             break;
     }
 
@@ -271,8 +276,10 @@ void AInfiniteBox::CameraGravitySwitchUpdate(float delta)
 {
     FRotator rotator = UKismetMathLibrary::RLerp(StartCameraSwitchRotator, EndCameraSwitchRotator, delta, false);
     FVector location = UKismetMathLibrary::VLerp(StartCameraSwitchLocation, EndCameraSwitchLocation, delta);
+    FLinearColor color = FLinearColor::LerpUsingHSV(StartSwitchColor, EndSwitchColor, delta);
     Camera->SetRelativeLocation(location);
     Camera->SetRelativeRotation(rotator);
+    DynamicMaterialInstance->SetVectorParameterValue(FName("Color"), color);
 }
 
 void AInfiniteBox::LeftBeginOverlap(class UPrimitiveComponent* OverlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
