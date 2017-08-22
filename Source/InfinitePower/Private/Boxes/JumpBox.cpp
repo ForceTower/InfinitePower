@@ -2,6 +2,7 @@
 
 #include "JumpBox.h"
 #include "GameFramework/Character.h"
+#include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 #include "ConstructorHelpers.h"
 
 
@@ -52,7 +53,8 @@ void AJumpBox::BeginPlay() {
 void AJumpBox::OnBoxComponentBeginOverlap (class UPrimitiveComponent* overlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
     ACharacter* player = Cast<ACharacter> (OtherActor);
     if (player) {
-        player->LaunchCharacter (FVector (0, 0, 1024), false, true);
+        player->GetCapsuleComponent()->SetAllPhysicsLinearVelocity(FVector(0, 0, 0));
+        player->GetCapsuleComponent()->AddForce(FVector(0, 0, 30000), NAME_None, true);
     }
 }
 
