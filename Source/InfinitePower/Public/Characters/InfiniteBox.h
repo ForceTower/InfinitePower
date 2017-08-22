@@ -9,6 +9,7 @@
 #include "Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h"
 #include "Runtime/Engine/Classes/Components/SceneComponent.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
+#include "Runtime/Engine/Classes/Components/TimelineComponent.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
@@ -24,7 +25,8 @@ enum class EGravityType : uint8
     VE_DOWN     UMETA(DisplayName = "Down Gravity"),
     VE_UP       UMETA(DisplayName = "Up Gravity"),
     VE_LEFT     UMETA(DisplayName = "Left Gravity"),
-    VE_RIGHT    UMETA(DisplayName = "Right Gravity")
+    VE_RIGHT    UMETA(DisplayName = "Right Gravity"),
+    VE_NONE     UMETA(DisplayName = "No Effect")
 };
 
 UCLASS()
@@ -39,6 +41,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+    virtual void OnConstruction(const FTransform& Transform) override;
 
     UFUNCTION ()
         void MoveHorizontal (float value);
@@ -69,6 +72,8 @@ protected:
         void DownBeginOverlap(class UPrimitiveComponent* OverlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
     UFUNCTION()
         void DownEndOverlap(class UPrimitiveComponent* OverlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+    UFUNCTION()
+        void CameraGravitySwitchUpdate(float delta);
 
 private:
     void ConstructorFinderDefaults();
@@ -85,6 +90,10 @@ public:
     virtual void ReturnToCheckpoint_Implementation() override;
     virtual void CreateCheckpoint_Implementation() override;
 
+    UFUNCTION(BlueprintCallable)
+    /** Changes The Gravity that affects the Infinite Box */
+    void ChangeGravity(EGravityType NewGravity);
+
 private:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Settings", meta = (AllowPrivateAccess = "true"))
         EGravityType StartGravity = EGravityType::VE_DOWN;
@@ -94,6 +103,9 @@ private:
         float JumpForce = 21000.0f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Settings", meta = (AllowPrivateAccess = "true"))
         float GravityForce = 980.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline Curves", meta = (AllowPrivateAccess = "true"))
+        UCurveFloat* CameraGravitySwitchCurve;
+
     UPROPERTY()
         FVector GravityVector;
     UPROPERTY()
@@ -112,6 +124,8 @@ private:
         EGravityType CurrentGravity;
     UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Movement Component", meta = (AllowPrivateAccess = "true"))
         UCharacterMovementComponent* MovementComponent;
+    UPROPERTY()
+        UMaterialInstanceDynamic* DynamicMaterialInstance;
 
     UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Cube", meta = (AllowPrivateAccess = "true"))
         UStaticMeshComponent* CubeMesh;
@@ -134,4 +148,37 @@ private:
         uint16 RightCollisionCount = 0;
     UPROPERTY()
         uint16 LeftCollisionCount = 0;
+    UPROPERTY()
+        FVector LastMovementVector;
+
+    /** Camera Gravity Switch Perspective View */
+    UPROPERTY()
+        UTimelineComponent* CameraGravitySwitch;
+    FOnTimelineFloat InterpCameraGravitySwitchFloatFunction {};
+    FOnTimelineEvent InterpCameraGravitySwitchEventFunction {};
+    UPROPERTY()
+        FVector StartCameraSwitchLocation;
+    UPROPERTY()
+        FVector EndCameraSwitchLocation;
+    UPROPERTY()
+        FRotator StartCameraSwitchRotator;
+    UPROPERTY()
+        FRotator EndCameraSwitchRotator;
+
+    //Camera Vectors
+    FVector DownLocation = FVector(-700, 0, 150);
+    FRotator DownRotator = FRotator(-20, 0, 0);
+
+    FVector UpLocation = FVector(-700, 0, -150);
+    FRotator UpRotator = FRotator(20, 0, 0);
+
+    FVector LeftLocation = FVector(-700, 150, 0);
+    FRotator LeftRotator = FRotator(0, -20, 0);
+
+    FVector RightLocation = FVector(-700, -150, 0);
+    FRotator RightRotator = FRotator(0, 20, 0);
+
+    FColor StartSwitchColor;
+    FColor EndSwitchColor;
+    FColor CurrentColor;
 };

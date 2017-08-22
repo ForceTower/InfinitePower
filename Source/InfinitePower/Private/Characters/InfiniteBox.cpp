@@ -2,6 +2,7 @@
 
 #include "InfiniteBox.h"
 #include "ConstructorHelpers.h"
+#include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 
 // Sets default values
 AInfiniteBox::AInfiniteBox()
@@ -56,6 +57,7 @@ AInfiniteBox::AInfiniteBox()
     RightCollision->OnComponentBeginOverlap.AddDynamic(this, &AInfiniteBox::RightBeginOverlap);
     RightCollision->OnComponentEndOverlap.AddDynamic(this, &AInfiniteBox::RightEndOverlap);
 
+    CameraGravitySwitch = CreateDefaultSubobject<UTimelineComponent>(TEXT("Camera Gravity Switch Timeline"));
 
     ConstructorFinderDefaults();
 }
@@ -69,6 +71,10 @@ void AInfiniteBox::ConstructorFinderDefaults()
     static ConstructorHelpers::FObjectFinder<UMaterialInterface> Material(TEXT("MaterialInstanceConstant'/Game/Materials/GlowTron/M_MrBox.M_MrBox'"));
     if (Material.Object)
         CubeMesh->SetMaterial(0, Material.Object);
+
+    static ConstructorHelpers::FObjectFinder<UCurveFloat> Curve (TEXT("CurveFloat'/Game/Curves/Camera/GravitySwitchCurve.GravitySwitchCurve'"));
+    if (Curve.Object)
+        CameraGravitySwitchCurve = Curve.Object;
 }
 
 // Called when the game starts or when spawned
@@ -77,6 +83,11 @@ void AInfiniteBox::BeginPlay()
 	Super::BeginPlay();
     CurrentGravity = StartGravity;
     CreateCheckpoint_Implementation();
+}
+
+void AInfiniteBox::OnConstruction(const FTransform& Transform)
+{
+    DynamicMaterialInstance = CubeMesh->CreateDynamicMaterialInstance(0);
 }
 
 // Called every frame
@@ -108,8 +119,8 @@ void AInfiniteBox::MoveHorizontal(float value)
         {
             FVector movementVector = FVector(0, value * CurrentDeltaTime * MovementSpeed, 0);
             AddActorLocalOffset(movementVector);
+            LastMovementVector = movementVector;
         }
-
     }
 }
 
@@ -123,6 +134,7 @@ void AInfiniteBox::MoveVertical(float value)
         {
             FVector movementVector = FVector(0, 0, value * CurrentDeltaTime * MovementSpeed);
             AddActorLocalOffset(movementVector);
+            LastMovementVector = movementVector;
         }
 
     }
@@ -155,8 +167,8 @@ void AInfiniteBox::JumpPressed()
     GEngine->AddOnScreenDebugMessage(0, 2, FColor::Blue, FString("Jump"));
     if (bLanded)
         CommomJump();
-    else
-        WallJump();
+    /*else
+        WallJump();*/
 }
 
 void AInfiniteBox::CommomJump()
@@ -173,13 +185,13 @@ void AInfiniteBox::WallJump()
     {
         if (bOnLeftWall)
         {
-            jumpVector = GravityVector * GravityForce * 2;
+            jumpVector = GravityVector * GravityForce * -2;
             jumpVector.Y = JumpForce * 2;
             conditionOk = true;
         }
         else if (bOnRightWall)
         {
-            jumpVector = GravityVector * -1 * GravityForce * 2;
+            jumpVector = GravityVector * GravityForce * -2;
             jumpVector.Y = JumpForce * -2;
             conditionOk = true;
         }
@@ -188,13 +200,13 @@ void AInfiniteBox::WallJump()
     {
         if (bOnUpWall)
         {
-            jumpVector = GravityVector * -1 * GravityForce * 2;
+            jumpVector = GravityVector * GravityForce * -2;
             jumpVector.Z = JumpForce * -2;
             conditionOk = true;
         }
         else if (bOnDownWall)
         {
-            jumpVector = GravityVector * GravityForce * 2;
+            jumpVector = GravityVector * GravityForce * -2;
             jumpVector.Z = JumpForce * 2;
             conditionOk = true;
         }
@@ -204,6 +216,63 @@ void AInfiniteBox::WallJump()
     {
         GetCapsuleComponent()->AddForce(jumpVector, NAME_None, true);
     }
+}
+
+void AInfiniteBox::ChangeGravity(EGravityType NewGravity)
+{
+    if (NewGravity == CurrentGravity)
+        return;
+
+    InterpCameraGravitySwitchFloatFunction.BindUFunction(this, FName("CameraGravitySwitchUpdate"));
+
+    StartCameraSwitchRotator = Camera->RelativeRotation;
+    StartCameraSwitchLocation = Camera->RelativeLocation;
+    DynamicMaterialInstance->GetVectorParameterValue(FName("Color"), StartSwitchColor);
+
+    switch (NewGravity)
+    {
+        case EGravityType::VE_DOWN:
+            EndCameraSwitchRotator = DownRotator;
+            EndCameraSwitchLocation = DownLocation;
+            break;
+        case EGravityType::VE_UP:
+            EndCameraSwitchRotator = UpRotator;
+            EndCameraSwitchLocation = UpLocation;
+            break;
+        case EGravityType::VE_LEFT:
+            EndCameraSwitchRotator = LeftRotator;
+            EndCameraSwitchLocation = LeftLocation;
+            break;
+        case EGravityType::VE_RIGHT:
+            EndCameraSwitchLocation = RightLocation;
+            EndCameraSwitchRotator = RightRotator;
+            break;
+    }
+
+    CurrentGravity = NewGravity;
+
+    if (CameraGravitySwitchCurve)
+    {
+        CameraGravitySwitch->AddInterpFloat(CameraGravitySwitchCurve, InterpCameraGravitySwitchFloatFunction, FName("Offset"));
+        CameraGravitySwitch->SetLooping(false);
+        CameraGravitySwitch->SetIgnoreTimeDilation(true);
+        CameraGravitySwitch->PlayFromStart();
+    }
+    else
+    {
+        if (GEngine)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString("No camera switch curve"));
+        }
+    }
+}
+
+void AInfiniteBox::CameraGravitySwitchUpdate(float delta)
+{
+    FRotator rotator = UKismetMathLibrary::RLerp(StartCameraSwitchRotator, EndCameraSwitchRotator, delta, false);
+    FVector location = UKismetMathLibrary::VLerp(StartCameraSwitchLocation, EndCameraSwitchLocation, delta);
+    Camera->SetRelativeLocation(location);
+    Camera->SetRelativeRotation(rotator);
 }
 
 void AInfiniteBox::LeftBeginOverlap(class UPrimitiveComponent* OverlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
