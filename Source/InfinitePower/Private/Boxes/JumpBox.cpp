@@ -3,7 +3,9 @@
 #include "JumpBox.h"
 #include "GameFramework/Character.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
+#include "Public/Characters/InfiniteBox.h"
 #include "ConstructorHelpers.h"
+#include "Runtime/Engine/Public/TimerManager.h"
 
 
 // Sets default values
@@ -31,6 +33,7 @@ AJumpBox::AJumpBox() {
 
     ConstructorFinderDefaults ();
 
+    bIsUsable = true;
     Tags.Add (FName ("JumpBox"));
 }
 
@@ -51,11 +54,23 @@ void AJumpBox::BeginPlay() {
 }
 
 void AJumpBox::OnBoxComponentBeginOverlap (class UPrimitiveComponent* overlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
-    ACharacter* player = Cast<ACharacter> (OtherActor);
+    if (!bIsUsable)
+        return;
+
+    AInfiniteBox* player = Cast<AInfiniteBox> (OtherActor);
     if (player) {
         player->GetCapsuleComponent()->SetAllPhysicsLinearVelocity(FVector(0, 0, 0));
-        player->GetCapsuleComponent()->AddForce(FVector(0, 0, 30000), NAME_None, true);
+        player->GetCapsuleComponent()->SetAllPhysicsAngularVelocity(FVector(0, 0, 0));
+        player->GetCapsuleComponent()->AddForce(FVector(0, 0, 45000), NAME_None, true);
+        bIsUsable = false;
+        FTimerHandle handle;
+        GetWorldTimerManager().SetTimer(handle, this, &AJumpBox::ResetUsability, 0.2, false);
     }
+}
+
+void AJumpBox::ResetUsability()
+{
+    bIsUsable = true;
 }
 
 void AJumpBox::ReturnToCheckpoint_Implementation () {

@@ -24,7 +24,10 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
     UFUNCTION ()
-    void OnBoxComponentBeginOverlap (class UPrimitiveComponent* overlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+        void OnBoxComponentBeginOverlap (class UPrimitiveComponent* overlapedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+    UFUNCTION()
+        void ResetUsability();
 
 public:	
     //Checkpoint Interface Declaration
@@ -36,6 +39,8 @@ private:
     UStaticMeshComponent* CubeStaticMeshComponent;
     UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = "Cube", meta = (AllowPrivateAccess = "true"))
     UBoxComponent* BoxCollisionComponent;
+
+    bool bIsUsable;
 
     void ConstructorFinderDefaults ();
 };

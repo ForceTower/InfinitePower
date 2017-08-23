@@ -50,9 +50,6 @@ protected:
 
     UFUNCTION()
         void JumpPressed();
-
-    void FORCEINLINE CommomJump();
-    void FORCEINLINE WallJump();
     
     void FORCEINLINE ApplyGravity(float DeltaTime);
 
@@ -94,13 +91,17 @@ public:
     /** Changes The Gravity that affects the Infinite Box */
     void ChangeGravity(EGravityType NewGravity);
 
+
+    void FORCEINLINE CommomJump();
+    void FORCEINLINE WallJump();
+
 private:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Settings", meta = (AllowPrivateAccess = "true"))
         EGravityType StartGravity = EGravityType::VE_DOWN;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Settings", meta = (AllowPrivateAccess = "true"))
         float MovementSpeed = 620.0f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Settings", meta = (AllowPrivateAccess = "true"))
-        float JumpForce = 21000.0f;
+        float JumpForce = 25000.0f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Settings", meta = (AllowPrivateAccess = "true"))
         float GravityForce = 980.0f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline Curves", meta = (AllowPrivateAccess = "true"))
